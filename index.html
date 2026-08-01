@@ -248,26 +248,18 @@ function mainR(W, d0) { return Math.min(d0 / 2 * (W * 0.12 / 40), W * 0.13); }
 
 function throatR(W, d0, d2, n) {
   const mr = mainR(W, d0);
-
-  // Scale each throat from the diameter only.
-  // Do NOT shrink it based on the number of throats.
-  return Math.max(2, (d2 / d0) * mr);
+  const GAP = 3;
+  const maxTotal = mr * 2 - GAP * (n + 1);
+  return Math.min(d2 / d0 * mr, Math.max(2, maxTotal / (2 * n)));
 }
 
 function branchCXs(W, d0, d2) {
-  const cx = W / 2 - 60;
-  const tr = throatR(W, d0, d2, N);
-
+  const cx  = W / 2 - 60; // shift pipe left to make room for piezometer tubes
+  const tr  = throatR(W, d0, d2, N);
   const GAP = 5;
-
-  // Total manifold width = N throat widths + gaps
-  const totalWidth = N * (2 * tr) + (N - 1) * GAP;
-
-  const left = cx - totalWidth / 2 + tr;
-
-  return Array.from({ length: N }, (_, i) =>
-      left + i * (2 * tr + GAP)
-  );
+  const total = N * 2 * tr + (N - 1) * GAP;
+  const startX = cx - total / 2 + tr;
+  return Array.from({ length: N }, (_, i) => startX + i * (2 * tr + GAP));
 }
 
 function pipeCX(W) { return W / 2 - 60; }
@@ -324,207 +316,78 @@ function drawPipe(W, H, d0, d2, v0, v2) {
 }
 
 function buildPipePath(W, H, cx, mr, tr, bxs, z, GAP) {
-    ctx.beginPath();
+  ctx.beginPath();
 
-    if (N === 1) {
-        ctx.moveTo(cx - mr, 0);
-        ctx.lineTo(cx - mr, z.stemTop);
-
-        ctx.bezierCurveTo(
-            cx - mr,
-            z.stemTop + z.conv * 0.6,
-            cx - tr,
-            z.splitStart - z.conv * 0.15,
-            cx - tr,
-            z.splitStart
-        );
-
-        ctx.lineTo(cx - tr, z.splitEnd);
-
-        ctx.bezierCurveTo(
-            cx - tr,
-            z.splitEnd + z.divg * 0.15,
-            cx - mr,
-            z.stemBot - z.divg * 0.6,
-            cx - mr,
-            z.stemBot
-        );
-
-        ctx.lineTo(cx - mr, H);
-        ctx.lineTo(cx + mr, H);
-        ctx.lineTo(cx + mr, z.stemBot);
-
-        ctx.bezierCurveTo(
-            cx + mr,
-            z.stemBot - z.divg * 0.6,
-            cx + tr,
-            z.splitEnd + z.divg * 0.15,
-            cx + tr,
-            z.splitEnd
-        );
-
-        ctx.lineTo(cx + tr, z.splitStart);
-
-        ctx.bezierCurveTo(
-            cx + tr,
-            z.splitStart - z.conv * 0.15,
-            cx + mr,
-            z.stemTop + z.conv * 0.6,
-            cx + mr,
-            z.stemTop
-        );
-
-        ctx.lineTo(cx + mr, 0);
-        ctx.closePath();
-        return;
-    }
-
-    const spread = tr * N * 0.65;
-
-    const leftTransition = cx - spread;
-    const rightTransition = cx + spread;
-
+  if (N === 1) {
     ctx.moveTo(cx - mr, 0);
     ctx.lineTo(cx - mr, z.stemTop);
-
-    ctx.bezierCurveTo(
-        cx - mr,
-        z.stemTop + z.conv * 0.5,
-
-        leftTransition,
-        z.splitStart - z.conv * 0.15,
-
-        leftTransition,
-        z.splitStart
-    );
-
-    ctx.lineTo(leftTransition, z.splitEnd);
-
-    ctx.bezierCurveTo(
-        leftTransition,
-        z.splitEnd + z.divg * 0.15,
-
-        cx - mr,
-        z.stemBot - z.divg * 0.5,
-
-        cx - mr,
-        z.stemBot
-    );
-
+    ctx.bezierCurveTo(cx - mr, z.stemTop + z.conv * 0.6, cx - tr, z.splitStart - z.conv * 0.1, cx - tr, z.splitStart);
+    ctx.lineTo(cx - tr, z.splitEnd);
+    ctx.bezierCurveTo(cx - tr, z.splitEnd + z.divg * 0.1, cx - mr, z.stemBot - z.divg * 0.6, cx - mr, z.stemBot);
     ctx.lineTo(cx - mr, H);
-
     ctx.lineTo(cx + mr, H);
-
     ctx.lineTo(cx + mr, z.stemBot);
-
-    ctx.bezierCurveTo(
-        cx + mr,
-        z.stemBot - z.divg * 0.5,
-
-        rightTransition,
-        z.splitEnd + z.divg * 0.15,
-
-        rightTransition,
-        z.splitEnd
-    );
-
-    ctx.lineTo(rightTransition, z.splitStart);
-
-    ctx.bezierCurveTo(
-        rightTransition,
-        z.splitStart - z.conv * 0.15,
-
-        cx + mr,
-        z.stemTop + z.conv * 0.5,
-
-        cx + mr,
-        z.stemTop
-    );
-
+    ctx.bezierCurveTo(cx + mr, z.stemBot - z.divg * 0.6, cx + tr, z.splitEnd + z.divg * 0.1, cx + tr, z.splitEnd);
+    ctx.lineTo(cx + tr, z.splitStart);
+    ctx.bezierCurveTo(cx + tr, z.splitStart - z.conv * 0.1, cx + mr, z.stemTop + z.conv * 0.6, cx + mr, z.stemTop);
     ctx.lineTo(cx + mr, 0);
-
     ctx.closePath();
+    return;
+  }
+
+  const leftEdge  = bxs[0] - tr;
+  const rightEdge = bxs[N - 1] + tr;
+
+  ctx.moveTo(cx - mr, 0);
+  ctx.lineTo(cx - mr, z.stemTop);
+  ctx.bezierCurveTo(
+    cx - mr, z.stemTop + z.conv * 0.55,
+    leftEdge, z.splitStart - z.conv * 0.1,
+    leftEdge, z.splitStart
+  );
+  ctx.lineTo(leftEdge, z.splitEnd);
+  ctx.bezierCurveTo(
+    leftEdge, z.splitEnd + z.divg * 0.1,
+    cx - mr, z.stemBot - z.divg * 0.55,
+    cx - mr, z.stemBot
+  );
+  ctx.lineTo(cx - mr, H);
+
+  ctx.lineTo(cx + mr, H);
+
+  ctx.lineTo(cx + mr, z.stemBot);
+  ctx.bezierCurveTo(
+    cx + mr, z.stemBot - z.divg * 0.55,
+    rightEdge, z.splitEnd + z.divg * 0.1,
+    rightEdge, z.splitEnd
+  );
+  ctx.lineTo(rightEdge, z.splitStart);
+  ctx.bezierCurveTo(
+    rightEdge, z.splitStart - z.conv * 0.1,
+    cx + mr, z.stemTop + z.conv * 0.55,
+    cx + mr, z.stemTop
+  );
+  ctx.lineTo(cx + mr, 0);
+  ctx.closePath();
 }
 
 function drawBranchWalls(W, H, cx, mr, tr, bxs, z, GAP) {
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth   = 1.8;
+  ctx.shadowColor = 'rgba(56,189,248,0.3)';
+  ctx.shadowBlur  = 5;
 
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 1.8;
-    ctx.shadowColor = 'rgba(56,189,248,0.3)';
-    ctx.shadowBlur = 5;
-
-    const manifoldWidth = tr * N * 0.65;
-
-    const leftManifold = cx - manifoldWidth;
-    const rightManifold = cx + manifoldWidth;
-
-    for (let i = 0; i < N - 1; i++) {
-
-        const wallX = bxs[i] + tr + GAP / 2;
-
-        const targetX =
-            leftManifold +
-            (i + 1) *
-            (rightManifold - leftManifold) /
-            N;
-
-        const forkTipY =
-            z.stemTop +
-            (z.splitStart - z.stemTop) * 0.22;
-
-        ctx.beginPath();
-
-        ctx.moveTo(wallX, z.splitStart);
-
-        ctx.bezierCurveTo(
-
-            wallX,
-            z.splitStart -
-                (z.splitStart - forkTipY) * 0.4,
-
-            targetX,
-            forkTipY +
-                (z.splitStart - forkTipY) * 0.25,
-
-            targetX,
-            forkTipY
-
-        );
-
-        ctx.stroke();
-
-        const forkBotY =
-            z.stemBot -
-            (z.stemBot - z.splitEnd) * 0.22;
-
-        ctx.beginPath();
-
-        ctx.moveTo(wallX, z.splitEnd);
-
-        ctx.bezierCurveTo(
-
-            wallX,
-            z.splitEnd +
-                (forkBotY - z.splitEnd) * 0.4,
-
-            targetX,
-            forkBotY -
-                (forkBotY - z.splitEnd) * 0.25,
-
-            targetX,
-            forkBotY
-
-        );
-
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(wallX, z.splitStart);
-        ctx.lineTo(wallX, z.splitEnd);
-        ctx.stroke();
-    }
-
-    ctx.shadowBlur = 0;
+  // Straight vertical dividers between adjacent throats, run the full height
+  // of the manifold (top taper → throat → bottom taper) so each channel
+  // reads as a flat-walled column rather than a fork that tapers to a point.
+  for (let i = 0; i < N - 1; i++) {
+    const wallX = bxs[i] + tr + GAP / 2;
+    ctx.beginPath();
+    ctx.moveTo(wallX, z.stemTop);
+    ctx.lineTo(wallX, z.stemBot);
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
 }
 
 /* Small taps on the pipe wall showing where each piezometer connects */
@@ -731,37 +594,11 @@ function drawArrows(W, H, cx, mr, tr, bxs, z, v0, v2) {
   });
 }
 
-function spawnParticle(W, H, d0, d2) {
-
-    const cx = pipeCX(W);
-
-    const mr = mainR(W, d0);
-
-    const tr = throatR(W, d0, d2, N);
-
-    const bxs = branchCXs(W, d0, d2);
-
-    const branch = Math.floor(Math.random() * N);
-
-    const lane = (Math.random() * 2 - 1) * 0.8;
-
-    particles.push({
-
-        branch,
-
-        lane,
-
-        age: 0,
-
-        y: H - 2,
-
-        x:
-            N === 1
-                ? cx + lane * mr
-                : bxs[branch] + lane * tr
-
-    });
-
+function spawnParticle(W, H, d0) {
+  const cx = pipeCX(W);
+  const mr = mainR(W, d0);
+  const lane = (Math.random() * 2 - 1) * 0.82;
+  particles.push({ x: cx + lane * mr, lane, y: H - 2, age: 0 });
 }
 
 function spawnBubble(W, H, d0, d2) {
@@ -792,25 +629,28 @@ function moveParticles(W, H, d0, d2, v0, v2) {
     const speed = (v0 + (v2 - v0) * tFrac) * 0.45;
     p.y -= speed;
 
-    if (inThroat || p.y < z.splitStart + z.conv * 0.3) {
-      if ((p.branch === undefined || p.branch >= N) && N > 1) {
-        p.branch = Math.min(N - 1, Math.max(0, Math.floor((p.lane + 1) / 2 * N)));
-      }
-      const targetCX = N === 1 ? cx : bxs[p.branch ?? 0];
-      const splitStart = z.stemTop;
-      const splitLength = z.splitStart - z.stemTop;
-      const t = Math.min(
-          1,
-          Math.max(
-              0,
-              1 - (p.y - splitStart) / splitLength
-          )
-      );
-      p.x = cx * (1 - t) + (targetCX + p.lane * tr) * t;
+    // Each particle's lane deterministically picks which throat channel it
+    // belongs to — no need to "discover" a branch only once it's near the
+    // throat, so there's no sudden reassignment/jump.
+    const targetCX = N === 1 ? cx : bxs[Math.min(N - 1, Math.max(0, Math.floor((p.lane + 1) / 2 * N)))];
+
+    // widthT runs smoothly 0→1→0 as the particle travels from the main pipe,
+    // through the taper, across the throat, and back out — 0 = full main-pipe
+    // half-width (mr) centered on cx, 1 = throat half-width (tr) centered on
+    // its own channel. Both position and width interpolate together, so
+    // particles glide into their lane instead of collapsing to a single x.
+    let widthT;
+    if (inThroat) {
+      widthT = 1;
+    } else if (p.y < z.splitStart) {
+      widthT = Math.max(0, Math.min(1, (p.y - z.stemTop) / z.conv));
     } else {
-      p.x = cx + p.lane * mr;
-      p.branch = undefined;
+      widthT = Math.max(0, Math.min(1, (z.stemBot - p.y) / z.divg));
     }
+
+    const halfWidth = mr + (tr - mr) * widthT;
+    const centerX   = cx + (targetCX - cx) * widthT;
+    p.x = centerX + p.lane * halfWidth;
     p.age++;
   });
 
@@ -887,8 +727,7 @@ function loop() {
   const { d0, d2, v0, v2, P0, P2, dP, cavitate } = getVals();
   cavitating = cavitate;
 
-  if (frame % 2 === 0 && particles.length < 60 + N * 8)
-    spawnParticle(W, H, d0, d2);
+  if (frame % 2 === 0 && particles.length < 60 + N * 8) spawnParticle(W, H, d0);
   moveParticles(W, H, d0, d2, v0, v2);
 
   ctx.clearRect(0, 0, W, H);
