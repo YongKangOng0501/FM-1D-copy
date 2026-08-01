@@ -255,12 +255,19 @@ function throatR(W, d0, d2, n) {
 }
 
 function branchCXs(W, d0, d2) {
-  const cx  = W / 2 - 60; // shift pipe left to make room for piezometer tubes
-  const tr  = throatR(W, d0, d2, N);
+  const cx = W / 2 - 60;
+  const tr = throatR(W, d0, d2, N);
+
   const GAP = 5;
-  const total = N * 2 * tr + (N - 1) * GAP;
-  const startX = cx - total / 2 + tr;
-  return Array.from({ length: N }, (_, i) => startX + i * (2 * tr + GAP));
+
+  // Total manifold width = N throat widths + gaps
+  const totalWidth = N * (2 * tr) + (N - 1) * GAP;
+
+  const left = cx - totalWidth / 2 + tr;
+
+  return Array.from({ length: N }, (_, i) =>
+      left + i * (2 * tr + GAP)
+  );
 }
 
 function pipeCX(W) { return W / 2 - 60; }
