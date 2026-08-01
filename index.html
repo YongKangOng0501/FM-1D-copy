@@ -248,9 +248,10 @@ function mainR(W, d0) { return Math.min(d0 / 2 * (W * 0.12 / 40), W * 0.13); }
 
 function throatR(W, d0, d2, n) {
   const mr = mainR(W, d0);
-  const GAP = 3;
-  const maxTotal = mr * 2 - GAP * (n + 1);
-  return Math.min(d2 / d0 * mr, Math.max(2, maxTotal / (2 * n)));
+
+  // Scale each throat from the diameter only.
+  // Do NOT shrink it based on the number of throats.
+  return Math.max(2, (d2 / d0) * mr);
 }
 
 function branchCXs(W, d0, d2) {
