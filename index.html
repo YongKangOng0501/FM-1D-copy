@@ -746,6 +746,7 @@ function updateMetrics(v2, P0, P2, P2_raw, dP, cavitate) {
   document.getElementById('mdp').innerHTML = (Math.abs(dP)/1e3).toFixed(1) + '<span class="metric-unit">kPa</span>';
 
   document.getElementById('mp2').style.color = cavitate ? 'var(--red)' : 'var(--accent)';
+  document.getElementById('mp2raw').style.color = cavitate ? 'var(--red)' : 'var(--muted)';
   document.getElementById('mp2wrap').classList.toggle('warn', cavitate);
 
   const banner = document.getElementById('cavBanner');
