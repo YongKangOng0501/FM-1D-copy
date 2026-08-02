@@ -199,6 +199,23 @@
   </div>
 </div>
 
+<div class="chart-panel">
+  <div class="chart-head">
+    <h2>Throat Pressure vs Parameter</h2>
+    <select id="xParam">
+      <option value="d2" selected>Throat diameter D₂</option>
+      <option value="d0">Main diameter D₀</option>
+      <option value="v0">Inlet velocity v₀</option>
+      <option value="dz">Elevation Δz</option>
+      <option value="n">Throats N</option>
+    </select>
+  </div>
+  <div class="chart-canvas-wrap" id="chartWrap">
+    <canvas id="chartCanvas"></canvas>
+  </div>
+  <p class="chart-note">Sweeps the selected parameter across its full slider range while holding every other parameter at its current value. The dot marks where you are right now; the dashed line and red band show where P₂ hits vapor pressure and cavitation begins.</p>
+</div>
+ 
 <script>
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
