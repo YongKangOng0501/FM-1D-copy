@@ -129,7 +129,7 @@
     background: var(--surface2); border: 1px solid var(--border); color: var(--text);
     border-radius: 6px; padding: 5px 8px; font-size: .74rem; cursor: pointer;
   }
-  .chart-canvas-wrap { width: 100%; height: 220px; }
+  .chart-canvas-wrap { width: 100%; height: 220px; margin-bottom: 20px; }
   .chart-canvas-wrap canvas { display: block; width: 100%; height: 100%; }
   .chart-note { font-size: .65rem; color: var(--muted); margin-top: 8px; line-height: 1.5; }
 </style>
@@ -217,27 +217,44 @@
 </div>
 
 <div class="chart-panel">
-  <div class="chart-head">
-    <h2>Throat Pressure vs Parameter</h2>
-    <select id="xParam">
-      <option value="d2" selected>Throat diameter D₂</option>
-      <option value="d0">Main diameter D₀</option>
-      <option value="v0">Inlet velocity v₀</option>
-      <option value="dz">Elevation Δz</option>
-      <option value="n">Throats N</option>
-    </select>
+
+  <h2>Throat Pressure vs Throat Diameter</h2>
+  <div class="chart-canvas-wrap">
+    <canvas id="chartD2"></canvas>
   </div>
-  <div class="chart-canvas-wrap" id="chartWrap">
-    <canvas id="chartCanvas"></canvas>
+
+  <h2>Throat Pressure vs Main Diameter</h2>
+  <div class="chart-canvas-wrap">
+    <canvas id="chartD0"></canvas>
   </div>
-  <p class="chart-note">Sweeps the selected parameter across its full slider range while holding every other parameter at its current value. The dot marks where you are right now; the dashed line and red band show where P₂ hits vapour pressure and cavitation begins.</p>
+
+  <h2>Throat Pressure vs Inlet Velocity</h2>
+  <div class="chart-canvas-wrap">
+    <canvas id="chartV0"></canvas>
+  </div>
+
+  <h2>Throat Pressure vs Elevation</h2>
+  <div class="chart-canvas-wrap">
+    <canvas id="chartDz"></canvas>
+  </div>
+
+  <h2>Throat Pressure vs Number of Throats</h2>
+  <div class="chart-canvas-wrap">
+    <canvas id="chartN"></canvas>
+  </div>
+
 </div>
  
 <script>
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
-const chartCanvas = document.getElementById('chartCanvas');
-const chartCtx    = chartCanvas.getContext('2d');
+const charts = {
+  d2: {canvas: document.getElementById("chartD2"), param: "d2"},
+  d0: {canvas: document.getElementById("chartD0"), param: "d0"},
+  v0: {canvas: document.getElementById("chartV0"), param: "v0"},
+  dz: {canvas: document.getElementById("chartDz"), param: "dz"},
+  n: {canvas: document.getElementById("chartN"), param: "n"}
+};
 const RHO    = 998.2; // density at room temperature
 const G      = 9.81;
 const P_REF  = 350000; // absolute inlet pressure
@@ -302,7 +319,7 @@ function setN(n) {
     b.classList.toggle('active', i + 1 === n));
   particles = [];
   bubbles = [];
-  drawChart();
+  drawAllCharts();
 }
 
 const MARGIN_FRAC  = 0.07;
@@ -837,7 +854,7 @@ function chartResize() {
    answers "what would happen to P2 if I moved *this* slider from here?" —
    it re-solves the Bernoulli relation at each sample point rather than
    showing historical data. */
-function drawChart() {
+function drawChart(xParam, canvas) {
   const wrap = document.getElementById('chartWrap');
   const rect = wrap.getBoundingClientRect();
   const W = rect.width, H = rect.height;
@@ -846,8 +863,8 @@ function drawChart() {
   const c = chartCtx;
   c.clearRect(0, 0, W, H);
 
-  const xParam = document.getElementById('xParam').value;
   const meta = PARAM_META[xParam];
+  const chartCtx = canvas.getContext("2d");
   const base = currentParams();
 
   const padL = 48, padR = 16, padT = 16, padB = 32;
@@ -958,6 +975,12 @@ function drawChart() {
   c.fillText('P₂ (kPa)', 0, 0);
   c.restore();
 }
+
+function drawAllCharts() {
+  Object.values(charts).forEach(chart => {
+    drawChart(chart.param, chart.canvas);
+  });
+}
  
 function resize() {
   const wrap = document.getElementById('wrap');
@@ -994,27 +1017,27 @@ function loop() {
 document.getElementById('d0').addEventListener('input', function () {
   document.getElementById('d0v').textContent = this.value + ' mm';
   particles = [];
-  drawChart();
+  drawAllCharts();
 });
 document.getElementById('d2').addEventListener('input', function () {
   document.getElementById('d2v').textContent = this.value + ' mm';
   particles = [];
-  drawChart();
+  drawAllCharts();
 });
 document.getElementById('v0').addEventListener('input', function () {
   document.getElementById('v0v').textContent = (+this.value).toFixed(1) + ' m/s';
-  drawChart();
+  drawAllCharts();
 });
 document.getElementById('dz').addEventListener('input', function () {
   document.getElementById('dzv').textContent = (+this.value).toFixed(1) + ' m';
-  drawChart();
+  drawAllCharts();
 });
-document.getElementById('xParam').addEventListener('change', drawChart);
-window.addEventListener('resize', () => { resize(); particles = []; drawChart(); });
+document.getElementById('xParam').addEventListener('change', drawAllCharts);
+window.addEventListener('resize', () => { resize(); particles = []; drawAllCharts(); });
 
 resize();
 loop();
-drawChart();
+drawAllCharts();
 </script>
 </body>
 </html>
