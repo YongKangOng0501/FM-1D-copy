@@ -273,31 +273,39 @@ function zones(H) {
   };
 }
 
-function mainR(W, d0) { return Math.min(d0 / 2 * (W * 0.12 / 40), W * 0.13); }
+// function mainR(W, d0) { return Math.min(d0 / 2 * (W * 0.12 / 40), W * 0.13); }
+
+function mainR(W, d0) {
+  const visualScale = W * 0.16 / 40;   // increased from 0.12
+  return Math.min((d0 / 2) * visualScale, W * 0.16);
+}
+
+// function throatR(W, d0, d2, n) {
+//   const mr = mainR(W, d0);
+//   const GAP = 3;
+//   const maxTotal = mr * 2 - GAP * (n + 1);
+//   return Math.min(d2 / d0 * mr, Math.max(2, maxTotal / (2 * n)));
+// }
 
 function throatR(W, d0, d2, n) {
   const mr = mainR(W, d0);
-  const GAP = 3;
-  const maxTotal = mr * 2 - GAP * (n + 1);
-  return Math.min(d2 / d0 * mr, Math.max(2, maxTotal / (2 * n)));
+
+  // direct diameter scaling
+  const throatScale = d2 / d0;
+
+  // keep multiple throats separated
+  const GAP = 5;
+  const available = (mr * 2 - GAP * (n + 1)) / (2 * n);
+
+  return Math.max(
+    3,
+    Math.min(mr * throatScale, available)
+  );
 }
 
-// function mmToPx(W, dMax = 80) {
-//   return (W * 0.25) / dMax;  // 25% of canvas width represents max diameter
-// }
-
-// function mainR(W, d0) {
-//   const scale = mmToPx(W);
-//   return (d0 / 2) * scale;
-// }
-
-// function throatR(W, d0, d2, n) {
-//   const scale = mmToPx(W);
-//   return (d2 / 2) * scale;
-// }
-
 function branchCXs(W, d0, d2) {
-  const cx  = W / 2 - 60; // shift pipe left to make room for piezometer tubes
+  // const cx  = W / 2 - 60; // shift pipe left to make room for piezometer tubes
+  const cx = W * 0.43;
   const tr  = throatR(W, d0, d2, N);
   const GAP = 5;
   const total = N * 2 * tr + (N - 1) * GAP;
@@ -305,7 +313,9 @@ function branchCXs(W, d0, d2) {
   return Array.from({ length: N }, (_, i) => startX + i * (2 * tr + GAP));
 }
 
-function pipeCX(W) { return W / 2 - 60; }
+// function pipeCX(W) { return W / 2 - 60; }
+
+function pipeCX(W) { return W * 0.43; }
 
 function drawPipe(W, H, d0, d2, v0, v2) {
   const cx  = pipeCX(W);
@@ -516,7 +526,7 @@ function drawElevationIndicator(W, H, cx, mr, z) {
 
 /* ── REAL PIEZOMETRIC (GLASS TUBE) MANOMETERS ── */
 /* Height of the liquid column, h = P / (ρ g), drawn to scale in a fixed-size glass tube. */
-const TUBE_MAX_M   = 25;   // meters of head that map to the tallest tube (visual scale)
+const TUBE_MAX_M   = 40;   // meters of head that map to the tallest tube (visual scale)
 let   tubeAnimP0    = 0;   // smoothed pixel-fill state for animation
 let   tubeAnimP2    = 0;
 
