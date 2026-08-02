@@ -103,14 +103,14 @@
 
 <header>
   <h1>VenaSplit</h1>
-  <p>Multi-Throat &amp; Cavitation Dynamics Simulator &nbsp;·&nbsp; Upward Flow &nbsp;·&nbsp; N Parallel Throats</p>
+  <p>Multi-Throat &amp; Cavitation Dynamics Simulator &nbsp;·&nbsp; Upward Flow</p>
 </header>
 
 <div class="equation">
-  <b>P + ½ρv² + ρgz = const</b> &nbsp;|&nbsp; <b>A₀v₀ = N · A₂v₂</b> &nbsp;|&nbsp; ρ = 1000 kg/m³, g = 9.81 m/s² &nbsp;|&nbsp; P<sub>v</sub> = 2.34 kPa
+  <b>P + ½ρv² + ρgz = const</b> &nbsp;|&nbsp; <b>A₀v₀ = A₂v₂</b> &nbsp;|&nbsp; ρ = 998.2 kg/m³, g = 9.81 m/s² &nbsp;|&nbsp; P<sub>vapour</sub> = 3.17 kPa
 </div>
 
-<div class="cavitation-banner" id="cavBanner">⚠ CAVITATION — P₂ has reached vapor pressure and is clamped at 2.34 kPa ⚠</div>
+<div class="cavitation-banner" id="cavBanner">⚠ CAVITATION — P₂ has reached vapour pressure and is clamped at 3.17 kPa ⚠</div>
 
 <div class="main">
   <!-- CONTROLS -->
@@ -151,27 +151,9 @@
         <div class="metric-label">Main pressure P₀</div>
         <div class="metric-value" id="mp0" style="color:var(--accent)">—<span class="metric-unit">kPa</span></div>
       </div>
-      <!-- <div class="metric" id="mp2wrap">
-        <div class="metric-label">Throat pressure P₂</div>
-        <div class="metric-value" id="mp2" style="color:var(--accent)">—<span class="metric-unit">kPa</span></div>
-      </div> -->
       <div class="metric" id="mp2wrap">
         <div class="metric-label">Throat pressure P₂</div>
-      
-        <div class="metric-value" id="mp2" style="color:var(--accent)">
-          —<span class="metric-unit">kPa</span>
-        </div>
-      
-        <div style="margin-top:6px;">
-          <div class="metric-label" style="font-size:0.55rem;">
-            Calculated pressure
-          </div>
-          <div class="metric-value"
-               id="mp2raw"
-               style="font-size:0.9rem;color:var(--muted);">
-            —<span class="metric-unit">kPa</span>
-          </div>
-        </div>
+        <div class="metric-value" id="mp2" style="color:var(--accent)">—<span class="metric-unit">kPa</span></div>
       </div>
       <div class="metric">
         <div class="metric-label">Pressure drop ΔP</div>
@@ -191,9 +173,9 @@
 <script>
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
-const RHO    = 1000;
+const RHO    = 998.2; // density at room temperature
 const G      = 9.81;
-const P_REF  = 250000;
+const P_REF  = 350000; // absolute inlet pressure
 const P_V    = 3170; // vapor pressure of water at 25 degrees Celsius (3.17 kPa)
 
 let N          = 1;
@@ -713,15 +695,13 @@ function drawBubbles() {
   });
 }
 
-function updateMetrics(v2, P0, P2, P2_raw, dP, cavitate) {
+function updateMetrics(v2, P0, P2, dP, cavitate) {
   document.getElementById('mv2').innerHTML = v2.toFixed(1) + '<span class="metric-unit">m/s</span>';
   document.getElementById('mp0').innerHTML = (P0/1e3).toFixed(1) + '<span class="metric-unit">kPa</span>';
   document.getElementById('mp2').innerHTML = (P2/1e3).toFixed(2) + '<span class="metric-unit">kPa</span>';
-  document.getElementById('mp2raw').innerHTML = (P2_raw/1e3).toFixed(2) + '<span class="metric-unit">kPa</span>';
   document.getElementById('mdp').innerHTML = (Math.abs(dP)/1e3).toFixed(1) + '<span class="metric-unit">kPa</span>';
 
   document.getElementById('mp2').style.color = cavitate ? 'var(--red)' : 'var(--accent)';
-  document.getElementById('mp2raw').style.color = cavitate ? 'var(--red)' : 'var(--muted)';
   document.getElementById('mp2wrap').classList.toggle('warn', cavitate);
 
   const banner = document.getElementById('cavBanner');
@@ -744,7 +724,7 @@ function loop() {
   const rect = wrap.getBoundingClientRect();
   const W = rect.width, H = rect.height;
 
-  const { d0, d2, v0, v2, P0, P2, P2_raw, dP, cavitate } = getVals();
+  const { d0, d2, v0, v2, P0, P2, dP, cavitate } = getVals();
   cavitating = cavitate;
 
   if (frame % 2 === 0 && particles.length < 60 + N * 8) spawnParticle(W, H, d0);
@@ -755,7 +735,7 @@ function loop() {
   drawParticles(H);
   drawBubbles();
   drawManometers(W, H);
-  updateMetrics(v2, P0, P2, P2_raw, dP, cavitate);
+  updateMetrics(v2, P0, P2, dP, cavitate);
 
   requestAnimationFrame(loop);
 }
