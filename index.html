@@ -275,7 +275,7 @@ function zones(H) {
 
 function mainR(W, d0) { return Math.min(d0 / 2 * (W * 0.12 / 40), W * 0.13); }
 
-function throatR(W, d0, equivalentDiameter, n) {
+function throatR(W, d0, d2, n) {
   const mr = mainR(W, d0);
   const GAP = 3;
   const maxTotal = mr * 2 - GAP * (n + 1);
