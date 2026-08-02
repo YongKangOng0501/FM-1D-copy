@@ -839,15 +839,6 @@ const PARAM_META = {
   n:  { label: 'Throats N',          unit: '',    min: 1,  max: 5,  fmt: v => v.toFixed(0) },
 };
 
-function chartResize() {
-  const wrap = document.getElementById('chartWrap');
-  const dpr = window.devicePixelRatio || 1;
-  const rect = wrap.getBoundingClientRect();
-  chartCanvas.width  = rect.width * dpr;
-  chartCanvas.height = rect.height * dpr;
-  chartCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-
 /* Sweeps the parameter chosen in the dropdown across its full slider range,
    holding every other parameter fixed at whatever it's currently set to,
    and plots the resulting throat pressure P2. This means the curve always
@@ -855,7 +846,7 @@ function chartResize() {
    it re-solves the Bernoulli relation at each sample point rather than
    showing historical data. */
 function drawChart(xParam, canvas) {
-  const wrap = document.getElementById('chartWrap');
+  const wrap = canvas.parentElement;
   const rect = wrap.getBoundingClientRect();
   const W = rect.width, H = rect.height;
   if (W <= 0 || H <= 0) return;
