@@ -159,20 +159,20 @@
   <div class="panel">
     <h2>Parameters</h2>
     <div class="ctrl-group">
-      <label>Main diameter D₀ <span id="d0v">56 mm</span></label>
-      <input type="range" id="d0" min="30" max="80" value="56" step="1">
+      <label>Main diameter D₀ <span id="d0v">350 mm</span></label>
+      <input type="range" id="d0" min="100" max="600" value="350" step="50">
     </div>
     <div class="ctrl-group">
-      <label>Throat diameter D₂ <span id="d2v">18 mm</span></label>
-      <input type="range" id="d2" min="8" max="35" value="18" step="1">
+      <label>Throat diameter D₂ <span id="d2v">75 mm</span></label>
+      <input type="range" id="d2" min="50" max="100" value="75" step="5">
     </div>
     <div class="ctrl-group">
-      <label>Inlet velocity v₀ <span id="v0v">3.0 m/s</span></label>
-      <input type="range" id="v0" min="1" max="10" value="3" step="0.5">
+      <label>Inlet velocity v₀ <span id="v0v">2.0 m/s</span></label>
+      <input type="range" id="v0" min="1" max="10" value="2" step="0.5">
     </div>
     <div class="ctrl-group">
-      <label>Elevation Δz (inlet→throat) <span id="dzv">2.0 m</span></label>
-      <input type="range" id="dz" min="0" max="40" value="2" step="1">
+      <label>Elevation Δz (inlet→throat) <span id="dzv">1.0 m</span></label>
+      <input type="range" id="dz" min="0" max="40" value="1" step="1">
     </div>
     <div class="ctrl-group">
       <label> No. of Throats, N <span id="nv">1</span></label>
@@ -832,8 +832,8 @@ function updateMetrics(v2, P0, P2, P2_raw, dP, cavitate) {
 }
 
 const PARAM_META = {
-  d2: { label: 'Throat diameter D₂', unit: 'mm',  min: 8,  max: 35, fmt: v => v.toFixed(0) },
-  d0: { label: 'Main diameter D₀',   unit: 'mm',  min: 30, max: 80, fmt: v => v.toFixed(0) },
+  d2: { label: 'Throat diameter D₂', unit: 'mm',  min: 100,  max: 600, fmt: v => v.toFixed(0) },
+  d0: { label: 'Main diameter D₀',   unit: 'mm',  min: 50, max: 100, fmt: v => v.toFixed(0) },
   v0: { label: 'Inlet velocity v₀',  unit: 'm/s', min: 1,  max: 10, fmt: v => v.toFixed(1) },
   dz: { label: 'Elevation Δz',       unit: 'm',   min: 0,  max: 40, fmt: v => v.toFixed(1) },
   n:  { label: 'Throats N',          unit: '',    min: 1,  max: 5,  fmt: v => v.toFixed(0) },
