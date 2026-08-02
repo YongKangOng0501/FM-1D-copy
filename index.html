@@ -713,13 +713,15 @@ function drawBubbles() {
   });
 }
 
-function updateMetrics(v2, P0, P2, dP, cavitate) {
+function updateMetrics(v2, P0, P2, P2_raw, dP, cavitate) {
   document.getElementById('mv2').innerHTML = v2.toFixed(1) + '<span class="metric-unit">m/s</span>';
   document.getElementById('mp0').innerHTML = (P0/1e3).toFixed(1) + '<span class="metric-unit">kPa</span>';
   document.getElementById('mp2').innerHTML = (P2/1e3).toFixed(2) + '<span class="metric-unit">kPa</span>';
+  document.getElementById('mp2raw').innerHTML = (P2_raw/1e3).toFixed(2) + '<span class="metric-unit">kPa</span>';
   document.getElementById('mdp').innerHTML = (Math.abs(dP)/1e3).toFixed(1) + '<span class="metric-unit">kPa</span>';
 
   document.getElementById('mp2').style.color = cavitate ? 'var(--red)' : 'var(--accent)';
+  document.getElementById('mp2raw').style.color = cavitate ? 'var(--red)' : 'var(--muted)';
   document.getElementById('mp2wrap').classList.toggle('warn', cavitate);
 
   const banner = document.getElementById('cavBanner');
@@ -742,7 +744,7 @@ function loop() {
   const rect = wrap.getBoundingClientRect();
   const W = rect.width, H = rect.height;
 
-  const { d0, d2, v0, v2, P0, P2, dP, cavitate } = getVals();
+  const { d0, d2, v0, v2, P0, P2, P2_raw, dP, cavitate } = getVals();
   cavitating = cavitate;
 
   if (frame % 2 === 0 && particles.length < 60 + N * 8) spawnParticle(W, H, d0);
@@ -753,7 +755,7 @@ function loop() {
   drawParticles(H);
   drawBubbles();
   drawManometers(W, H);
-  updateMetrics(v2, P0, P2, dP, cavitate);
+  updateMetrics(v2, P0, P2, P2_raw, dP, cavitate);
 
   requestAnimationFrame(loop);
 }
