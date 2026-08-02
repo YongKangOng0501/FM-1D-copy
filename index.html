@@ -780,6 +780,151 @@ function updateMetrics(v2, P0, P2, P2_raw, dP, cavitate) {
   banner.classList.toggle('active', cavitate);
 }
 
+const PARAM_META = {
+  d2: { label: 'Throat diameter D₂', unit: 'mm',  min: 8,  max: 35, fmt: v => v.toFixed(0) },
+  d0: { label: 'Main diameter D₀',   unit: 'mm',  min: 30, max: 80, fmt: v => v.toFixed(0) },
+  v0: { label: 'Inlet velocity v₀',  unit: 'm/s', min: 1,  max: 10, fmt: v => v.toFixed(1) },
+  dz: { label: 'Elevation Δz',       unit: 'm',   min: 0,  max: 10, fmt: v => v.toFixed(1) },
+  n:  { label: 'Throats N',          unit: '',    min: 1,  max: 5,  fmt: v => v.toFixed(0) },
+};
+
+function chartResize() {
+  const wrap = document.getElementById('chartWrap');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = wrap.getBoundingClientRect();
+  chartCanvas.width  = rect.width * dpr;
+  chartCanvas.height = rect.height * dpr;
+  chartCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+/* Sweeps the parameter chosen in the dropdown across its full slider range,
+   holding every other parameter fixed at whatever it's currently set to,
+   and plots the resulting throat pressure P2. This means the curve always
+   answers "what would happen to P2 if I moved *this* slider from here?" —
+   it re-solves the Bernoulli relation at each sample point rather than
+   showing historical data. */
+function drawChart() {
+  const wrap = document.getElementById('chartWrap');
+  const rect = wrap.getBoundingClientRect();
+  const W = rect.width, H = rect.height;
+  if (W <= 0 || H <= 0) return;
+  chartResize();
+  const c = chartCtx;
+  c.clearRect(0, 0, W, H);
+
+  const xParam = document.getElementById('xParam').value;
+  const meta = PARAM_META[xParam];
+  const base = currentParams();
+
+  const padL = 48, padR = 16, padT = 16, padB = 32;
+  const plotW = Math.max(10, W - padL - padR);
+  const plotH = Math.max(10, H - padT - padB);
+
+  const steps = xParam === 'n' ? 5 : 60;
+  const pts = [];
+  for (let i = 0; i < steps; i++) {
+    const val = xParam === 'n' ? i + 1 : meta.min + (meta.max - meta.min) * i / (steps - 1);
+    const r = calcThroat({ ...base, [xParam]: val });
+    pts.push({ x: val, P2: r.P2 / 1000, cav: r.cavitate });
+  }
+
+  const P0kPa = P_REF / 1000;
+  const yMax = P0kPa * 1.08;
+  const yMin = 0;
+
+  const xPix = v => padL + (v - meta.min) / (meta.max - meta.min) * plotW;
+  const yPix = v => padT + plotH - (v - yMin) / (yMax - yMin) * plotH;
+
+  // horizontal gridlines + y-axis ticks (kPa)
+  c.lineWidth = 1;
+  const yTicks = 5;
+  for (let i = 0; i <= yTicks; i++) {
+    const v = yMin + (yMax - yMin) * i / yTicks;
+    const y = yPix(v);
+    c.strokeStyle = 'rgba(148,163,184,0.25)';
+    c.beginPath(); c.moveTo(padL, y); c.lineTo(padL + plotW, y); c.stroke();
+    c.fillStyle = 'rgba(100,116,139,0.85)';
+    c.font = '9px "Courier New"';
+    c.textAlign = 'right';
+    c.fillText(v.toFixed(0), padL - 6, y + 3);
+  }
+
+  // vertical gridlines + x-axis ticks
+  const xTicks = xParam === 'n' ? 4 : 5;
+  c.textAlign = 'center';
+  for (let i = 0; i <= xTicks; i++) {
+    const v = meta.min + (meta.max - meta.min) * i / xTicks;
+    const x = xPix(v);
+    c.strokeStyle = 'rgba(148,163,184,0.12)';
+    c.beginPath(); c.moveTo(x, padT); c.lineTo(x, padT + plotH); c.stroke();
+    c.fillStyle = 'rgba(100,116,139,0.85)';
+    c.font = '9px "Courier New"';
+    c.fillText(meta.fmt(v), x, padT + plotH + 14);
+  }
+
+  // cavitation zone: shaded band + dashed threshold at vapor pressure
+  const yVap = yPix(P_V / 1000);
+  c.fillStyle = 'rgba(220,38,38,0.08)';
+  c.fillRect(padL, yVap, plotW, padT + plotH - yVap);
+  c.strokeStyle = 'rgba(220,38,38,0.55)';
+  c.setLineDash([4, 3]);
+  c.beginPath(); c.moveTo(padL, yVap); c.lineTo(padL + plotW, yVap); c.stroke();
+  c.setLineDash([]);
+  c.fillStyle = 'rgba(220,38,38,0.85)';
+  c.font = '700 8px "Courier New"';
+  c.textAlign = 'left';
+  c.fillText('Pᵥ (cavitation)', padL + 4, yVap - 4);
+
+  // the P2 curve — turns red wherever that segment is cavitating
+  c.lineWidth = 2;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i];
+    c.strokeStyle = (a.cav || b.cav) ? '#dc2626' : '#733ca1';
+    c.beginPath();
+    c.moveTo(xPix(a.x), yPix(a.P2));
+    c.lineTo(xPix(b.x), yPix(b.P2));
+    c.stroke();
+  }
+  if (xParam === 'n') {
+    pts.forEach(p => {
+      c.beginPath();
+      c.arc(xPix(p.x), yPix(p.P2), 2.5, 0, Math.PI * 2);
+      c.fillStyle = p.cav ? '#dc2626' : '#733ca1';
+      c.fill();
+    });
+  }
+
+  // current operating point, from whatever the sliders/buttons say right now
+  const cur = calcThroat(base);
+  const curX = xPix(base[xParam]);
+  const curY = yPix(cur.P2 / 1000);
+  c.setLineDash([2, 2]);
+  c.strokeStyle = 'rgba(15,23,42,0.35)';
+  c.beginPath(); c.moveTo(curX, padT); c.lineTo(curX, padT + plotH); c.stroke();
+  c.beginPath(); c.moveTo(padL, curY); c.lineTo(padL + plotW, curY); c.stroke();
+  c.setLineDash([]);
+  c.beginPath();
+  c.arc(curX, curY, 4.5, 0, Math.PI * 2);
+  c.fillStyle = cur.cavitate ? '#dc2626' : '#0f172a';
+  c.fill();
+  c.strokeStyle = '#fff';
+  c.lineWidth = 1.5;
+  c.stroke();
+
+  // axis titles
+  c.fillStyle = 'rgba(15,23,42,0.8)';
+  c.font = '700 9px "Courier New"';
+  c.textAlign = 'center';
+  c.fillText(meta.label + (meta.unit ? ' (' + meta.unit + ')' : ''), padL + plotW / 2, H - 4);
+
+  c.save();
+  c.translate(12, padT + plotH / 2);
+  c.rotate(-Math.PI / 2);
+  c.textAlign = 'center';
+  c.fillText('P₂ (kPa)', 0, 0);
+  c.restore();
+}
+ 
 function resize() {
   const wrap = document.getElementById('wrap');
   const dpr = window.devicePixelRatio || 1;
@@ -826,10 +971,12 @@ document.getElementById('v0').addEventListener('input', function () {
 document.getElementById('dz').addEventListener('input', function () {
   document.getElementById('dzv').textContent = (+this.value).toFixed(1) + ' m';
 });
-window.addEventListener('resize', () => { resize(); particles = []; });
+document.getElementById('xParam').addEventListener('change', drawChart);
+window.addEventListener('resize', () => { resize(); particles = []; drawChart(); });
 
 resize();
 loop();
+drawChart();
 </script>
 </body>
 </html>
