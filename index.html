@@ -859,12 +859,11 @@ function drawChart(xParam, canvas) {
   const rect = wrap.getBoundingClientRect();
   const W = rect.width, H = rect.height;
   if (W <= 0 || H <= 0) return;
-  chartResize();
+  const chartCtx = canvas.getContext("2d");
   const c = chartCtx;
   c.clearRect(0, 0, W, H);
 
   const meta = PARAM_META[xParam];
-  const chartCtx = canvas.getContext("2d");
   const base = currentParams();
 
   const padL = 48, padR = 16, padT = 16, padB = 32;
@@ -989,7 +988,7 @@ function resize() {
   
   canvas.width = rect.width * dpr;
   canvas.height = rect.height * dpr;
-  ctx.scale(dpr, dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 function loop() {
@@ -1032,7 +1031,6 @@ document.getElementById('dz').addEventListener('input', function () {
   document.getElementById('dzv').textContent = (+this.value).toFixed(1) + ' m';
   drawAllCharts();
 });
-document.getElementById('xParam').addEventListener('change', drawAllCharts);
 window.addEventListener('resize', () => { resize(); particles = []; drawAllCharts(); });
 
 resize();
