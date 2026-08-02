@@ -231,6 +231,10 @@ function getVals() {
   const dz = +document.getElementById('dz').value;
   const A0 = Math.PI * (d0 / 2) ** 2;
   const A2 = Math.PI * (d2 / 2) ** 2;
+
+  // Equivalent diameter of all throats combined
+  const equivalentDiameter = Math.sqrt(N) * d2;
+ 
   const v2 = v0 * A0 / (N * A2);
 
   // Bernoulli with elevation gain to the throat:
@@ -242,7 +246,7 @@ function getVals() {
   const P2 = cavitate ? P_V : P2_raw;
   const dP = P0 - P2;
 
-  return { d0, d2, v0, dz, v2, P0, P2, P2_raw, dP, cavitate };
+  return { d0, d2, equivalentDiameter, v0, dz, v2, P0, P2, P2_raw, dP, cavitate };
 }
 
 function setN(n) {
@@ -273,32 +277,32 @@ function zones(H) {
   };
 }
 
-// function mainR(W, d0) { return Math.min(d0 / 2 * (W * 0.12 / 40), W * 0.13); }
+function mainR(W, d0) { return Math.min(d0 / 2 * (W * 0.12 / 40), W * 0.13); }
 
-// function throatR(W, d0, d2, n) {
-//   const mr = mainR(W, d0);
-//   const GAP = 3;
-//   const maxTotal = mr * 2 - GAP * (n + 1);
-//   return Math.min(d2 / d0 * mr, Math.max(2, maxTotal / (2 * n)));
+function throatR(W, d0, equivalentDiameter, n) {
+  const mr = mainR(W, d0);
+  const GAP = 3;
+  const maxTotal = mr * 2 - GAP * (n + 1);
+  return Math.min(d2 / d0 * mr, Math.max(2, maxTotal / (2 * n)));
+}
+
+// function mmToPx(W, dMax = 80) {
+//   return (W * 0.25) / dMax;  // 25% of canvas width represents max diameter
 // }
 
-function mmToPx(W, dMax = 80) {
-  return (W * 0.25) / dMax;  // 25% of canvas width represents max diameter
-}
+// function mainR(W, d0) {
+//   const scale = mmToPx(W);
+//   return (d0 / 2) * scale;
+// }
 
-function mainR(W, d0) {
-  const scale = mmToPx(W);
-  return (d0 / 2) * scale;
-}
-
-function throatR(W, d0, d2, n) {
-  const scale = mmToPx(W);
-  return (d2 / 2) * scale;
-}
+// function throatR(W, d0, d2, n) {
+//   const scale = mmToPx(W);
+//   return (d2 / 2) * scale;
+// }
 
 function branchCXs(W, d0, d2) {
   const cx  = W / 2 - 60; // shift pipe left to make room for piezometer tubes
-  const tr  = throatR(W, d0, d2, N);
+  const tr  = throatR(W, d0, equivalentDiameter, N);
   const GAP = 5;
   const total = N * 2 * tr + (N - 1) * GAP;
   const startX = cx - total / 2 + tr;
@@ -310,7 +314,7 @@ function pipeCX(W) { return W / 2 - 60; }
 function drawPipe(W, H, d0, d2, v0, v2) {
   const cx  = pipeCX(W);
   const mr  = mainR(W, d0);
-  const tr  = throatR(W, d0, d2, N);
+  const tr  = throatR(W, d0, equivalentDiameter, N);
   const bxs = branchCXs(W, d0, d2);
   const z   = zones(H);
   const GAP = 5;
@@ -646,7 +650,7 @@ function spawnParticle(W, H, d0) {
 
 function spawnBubble(W, H, d0, d2) {
   const bxs = branchCXs(W, d0, d2);
-  const tr  = throatR(W, d0, d2, N);
+  const tr  = throatR(W, d0, equivalentDiameter, N);
   const z   = zones(H);
   const branch = Math.floor(Math.random() * N);
   const x = bxs[branch] + (Math.random() * 2 - 1) * tr * 0.7;
@@ -657,7 +661,7 @@ function spawnBubble(W, H, d0, d2) {
 function moveParticles(W, H, d0, d2, v0, v2) {
   const cx  = pipeCX(W);
   const mr  = mainR(W, d0);
-  const tr  = throatR(W, d0, d2, N);
+  const tr  = throatR(W, d0, equivalentDiameter, N);
   const bxs = branchCXs(W, d0, d2);
   const z   = zones(H);
 
