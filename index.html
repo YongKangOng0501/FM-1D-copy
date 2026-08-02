@@ -40,6 +40,24 @@
   header { text-align: center; margin-bottom: 16px; }
   header h1 { font-size: 1.9rem; font-weight: 800; letter-spacing: .15em; color: var(--accent); text-transform: uppercase; }
   header p  { font-size: .75rem; color: var(--muted); margin-top: 3px; letter-spacing: .08em; }
+  
+  .pressure-note {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 8px 14px;
+    margin-bottom: 16px;
+    max-width: 900px;
+    width: 100%;
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .pressure-note strong {
+    color: var(--accent);
+  }
+  
   .equation {
     background: var(--surface); border: 1px solid var(--border);
     border-left: 3px solid var(--accent); border-radius: 6px;
@@ -106,6 +124,13 @@
   <p>Multi-Throat &amp; Cavitation Dynamics Simulator &nbsp;·&nbsp; Upward Flow</p>
 </header>
 
+<div class="pressure-note">
+  <strong>Pressure Convention:</strong> All pressures displayed and used in
+  calculations are <strong>absolute pressures (kPa abs)</strong>. Cavitation
+  occurs when the calculated throat pressure falls below the vapor pressure of
+  water (<strong>3.17 kPa abs at 25°C</strong>).
+</div>
+ 
 <div class="equation">
   <b>P + ½ρv² + ρgz = const</b> &nbsp;|&nbsp; <b>A₀v₀ = A₂v₂</b> &nbsp;|&nbsp; ρ = 998.2 kg/m³, g = 9.81 m/s² &nbsp;|&nbsp; P<sub>vapour</sub> = 3.17 kPa
 </div>
