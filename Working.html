@@ -40,12 +40,30 @@
   header { text-align: center; margin-bottom: 16px; }
   header h1 { font-size: 1.9rem; font-weight: 800; letter-spacing: .15em; color: var(--accent); text-transform: uppercase; }
   header p  { font-size: .75rem; color: var(--muted); margin-top: 3px; letter-spacing: .08em; }
+  
+  .pressure-note {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 8px 14px;
+    margin-bottom: 16px;
+    max-width: 1060px;
+    width: 100%;
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .pressure-note strong {
+    color: var(--accent);
+  }
+  
   .equation {
     background: var(--surface); border: 1px solid var(--border);
     border-left: 3px solid var(--accent); border-radius: 6px;
     padding: 7px 14px; font-size: .75rem; color: var(--muted);
     text-align: center; margin-bottom: 16px;
-    font-family: 'Courier New', monospace; max-width: 680px; width: 100%;
+    font-family: 'Courier New', monospace; max-width: 1060px; width: 100%;
   }
   .equation b { color: var(--accent); }
 
@@ -92,7 +110,7 @@
   .metric-unit  { font-size: .62rem; color: var(--muted); margin-left: 3px; }
 
   /* ── CANVAS ── */
-  .canvas-wrap { flex: 1; min-width: 340px; height: 500px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; position: relative; }
+  .canvas-wrap { flex: 1; min-width: 340px; height: min(70vh,600px); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; position: relative; }
   canvas { display: block; width: 100%; height: 100%; }
   .clabel { position: absolute; font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); left: 50%; transform: translateX(-50%); pointer-events: none; }
   .clabel.top { top: 8px; }
@@ -103,14 +121,21 @@
 
 <header>
   <h1>VenaSplit</h1>
-  <p>Multi-Throat &amp; Cavitation Dynamics Simulator &nbsp;·&nbsp; Upward Flow &nbsp;·&nbsp; N Parallel Throats</p>
+  <p>Multi-Throat &amp; Cavitation Dynamics Simulator &nbsp;·&nbsp; Upward Flow</p>
 </header>
 
+<div class="pressure-note">
+  <strong>Pressure Convention:</strong> All pressures displayed and used in
+  calculations are <strong>absolute pressures (kPa abs)</strong>. Cavitation
+  occurs when the calculated throat pressure falls below the vapour pressure of
+  water (<strong>3.17 kPa abs at 25°C</strong>).
+</div>
+ 
 <div class="equation">
-  <b>P + ½ρv² + ρgz = const</b> &nbsp;|&nbsp; <b>A₀v₀ = N · A₂v₂</b> &nbsp;|&nbsp; ρ = 1000 kg/m³, g = 9.81 m/s² &nbsp;|&nbsp; P<sub>v</sub> = 2.34 kPa
+  <b>Bernoulli's equation: P + ½ρv² + ρgz = const</b> &nbsp;|&nbsp; <b>Continuity equation: A₀v₀ = N · A₂v₂</b> &nbsp;|&nbsp; <b>ρ = 998.2 kg/m³</b>, <b>g = 9.81 m/s²</b>, <b>P<sub>vapour</sub> = 3.17 kPa</b>
 </div>
 
-<div class="cavitation-banner" id="cavBanner">⚠ CAVITATION — P₂ has reached vapor pressure and is clamped at 2.34 kPa ⚠</div>
+<div class="cavitation-banner" id="cavBanner">⚠ CAVITATION — P₂ has reached vapour pressure and is clamped at 3.17 kPa ⚠</div>
 
 <div class="main">
   <!-- CONTROLS -->
@@ -130,10 +155,10 @@
     </div>
     <div class="ctrl-group">
       <label>Elevation Δz (inlet→throat) <span id="dzv">2.0 m</span></label>
-      <input type="range" id="dz" min="0" max="10" value="2" step="0.5">
+      <input type="range" id="dz" min="0" max="40" value="2" step="1">
     </div>
     <div class="ctrl-group">
-      <label>Throats N <span id="nv">1</span></label>
+      <label> No. of Throats, N <span id="nv">1</span></label>
       <div class="throat-btns" id="throatBtns">
         <button onclick="setN(1)" class="active">1</button>
         <button onclick="setN(2)">2</button>
@@ -144,16 +169,20 @@
     </div>
     <div class="metrics">
       <div class="metric">
-        <div class="metric-label">Throat velocity v₂</div>
-        <div class="metric-value" id="mv2" style="color:var(--red)">—<span class="metric-unit">m/s</span></div>
-      </div>
-      <div class="metric">
         <div class="metric-label">Main pressure P₀</div>
         <div class="metric-value" id="mp0" style="color:var(--accent)">—<span class="metric-unit">kPa</span></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Throat velocity v₂</div>
+        <div class="metric-value" id="mv2" style="color:var(--red)">—<span class="metric-unit">m/s</span></div>
       </div>
       <div class="metric" id="mp2wrap">
         <div class="metric-label">Throat pressure P₂</div>
         <div class="metric-value" id="mp2" style="color:var(--accent)">—<span class="metric-unit">kPa</span></div>
+        <div style="margin-top:6px;">
+          <div class="metric-label" style="font-size:0.55rem;">Calculated pressure</div>
+          <div class="metric-value" id="mp2raw" style="font-size:0.9rem;color:var(--muted);">—<span class="metric-unit">kPa</span></div>
+        </div>
       </div>
       <div class="metric">
         <div class="metric-label">Pressure drop ΔP</div>
@@ -173,10 +202,10 @@
 <script>
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
-const RHO    = 1000;
+const RHO    = 998.2; // density at room temperature
 const G      = 9.81;
-const P_REF  = 200000;
-const P_V    = 2340; // vapor pressure of water, Pa (2.34 kPa)
+const P_REF  = 350000; // absolute inlet pressure
+const P_V    = 3170; // vapor pressure of water at 25 degrees Celsius (3.17 kPa)
 
 let N          = 1;
 let particles  = [];
@@ -252,6 +281,20 @@ function throatR(W, d0, d2, n) {
   const maxTotal = mr * 2 - GAP * (n + 1);
   return Math.min(d2 / d0 * mr, Math.max(2, maxTotal / (2 * n)));
 }
+
+// function mmToPx(W, dMax = 80) {
+//   return (W * 0.25) / dMax;  // 25% of canvas width represents max diameter
+// }
+
+// function mainR(W, d0) {
+//   const scale = mmToPx(W);
+//   return (d0 / 2) * scale;
+// }
+
+// function throatR(W, d0, d2, n) {
+//   const scale = mmToPx(W);
+//   return (d2 / 2) * scale;
+// }
 
 function branchCXs(W, d0, d2) {
   const cx  = W / 2 - 60; // shift pipe left to make room for piezometer tubes
@@ -377,32 +420,14 @@ function drawBranchWalls(W, H, cx, mr, tr, bxs, z, GAP) {
   ctx.shadowColor = 'rgba(56,189,248,0.3)';
   ctx.shadowBlur  = 5;
 
+  // Straight vertical dividers between adjacent throats, run the full height
+  // of the manifold (top taper → throat → bottom taper) so each channel
+  // reads as a flat-walled column rather than a fork that tapers to a point.
   for (let i = 0; i < N - 1; i++) {
     const wallX = bxs[i] + tr + GAP / 2;
-    const forkTipY = z.stemTop + (z.splitStart - z.stemTop) * 0.15;
-
     ctx.beginPath();
-    ctx.moveTo(wallX, z.splitStart);
-    ctx.bezierCurveTo(
-      wallX, z.splitStart - (z.splitStart - forkTipY) * 0.4,
-      cx, forkTipY + (z.splitStart - forkTipY) * 0.25,
-      cx, forkTipY
-    );
-    ctx.stroke();
-
-    const forkBotY = z.stemBot - (z.stemBot - z.splitEnd) * 0.15;
-    ctx.beginPath();
-    ctx.moveTo(wallX, z.splitEnd);
-    ctx.bezierCurveTo(
-      wallX, z.splitEnd + (forkBotY - z.splitEnd) * 0.4,
-      cx, forkBotY - (forkBotY - z.splitEnd) * 0.25,
-      cx, forkBotY
-    );
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(wallX, z.splitStart);
-    ctx.lineTo(wallX, z.splitEnd);
+    ctx.moveTo(wallX, z.stemTop);
+    ctx.lineTo(wallX, z.stemBot);
     ctx.stroke();
   }
   ctx.shadowBlur = 0;
@@ -647,17 +672,28 @@ function moveParticles(W, H, d0, d2, v0, v2) {
     const speed = (v0 + (v2 - v0) * tFrac) * 0.45;
     p.y -= speed;
 
-    if (inThroat || p.y < z.splitStart + z.conv * 0.3) {
-      if ((p.branch === undefined || p.branch >= N) && N > 1) {
-        p.branch = Math.min(N - 1, Math.max(0, Math.floor((p.lane + 1) / 2 * N)));
-      }
-      const targetCX = N === 1 ? cx : bxs[p.branch ?? 0];
-      const t = Math.min(1, Math.max(0, 1 - (p.y - z.splitStart) / (z.conv)));
-      p.x = cx * (1 - t) + (targetCX + p.lane * tr) * t;
+    // Each particle's lane deterministically picks which throat channel it
+    // belongs to — no need to "discover" a branch only once it's near the
+    // throat, so there's no sudden reassignment/jump.
+    const targetCX = N === 1 ? cx : bxs[Math.min(N - 1, Math.max(0, Math.floor((p.lane + 1) / 2 * N)))];
+
+    // widthT runs smoothly 0→1→0 as the particle travels from the main pipe,
+    // through the taper, across the throat, and back out — 0 = full main-pipe
+    // half-width (mr) centered on cx, 1 = throat half-width (tr) centered on
+    // its own channel. Both position and width interpolate together, so
+    // particles glide into their lane instead of collapsing to a single x.
+    let widthT;
+    if (inThroat) {
+      widthT = 1;
+    } else if (p.y < z.splitStart) {
+      widthT = Math.max(0, Math.min(1, (p.y - z.stemTop) / z.conv));
     } else {
-      p.x = cx + p.lane * mr;
-      p.branch = undefined;
+      widthT = Math.max(0, Math.min(1, (z.stemBot - p.y) / z.divg));
     }
+
+    const halfWidth = mr + (tr - mr) * widthT;
+    const centerX   = cx + (targetCX - cx) * widthT;
+    p.x = centerX + p.lane * halfWidth;
     p.age++;
   });
 
@@ -702,13 +738,15 @@ function drawBubbles() {
   });
 }
 
-function updateMetrics(v2, P0, P2, dP, cavitate) {
+function updateMetrics(v2, P0, P2, P2_raw, dP, cavitate) {
   document.getElementById('mv2').innerHTML = v2.toFixed(1) + '<span class="metric-unit">m/s</span>';
   document.getElementById('mp0').innerHTML = (P0/1e3).toFixed(1) + '<span class="metric-unit">kPa</span>';
   document.getElementById('mp2').innerHTML = (P2/1e3).toFixed(2) + '<span class="metric-unit">kPa</span>';
+  document.getElementById('mp2raw').innerHTML = (P2_raw/1e3).toFixed(2) + '<span class="metric-unit">kPa</span>';
   document.getElementById('mdp').innerHTML = (Math.abs(dP)/1e3).toFixed(1) + '<span class="metric-unit">kPa</span>';
 
   document.getElementById('mp2').style.color = cavitate ? 'var(--red)' : 'var(--accent)';
+  document.getElementById('mp2raw').style.color = cavitate ? 'var(--red)' : 'var(--muted)';
   document.getElementById('mp2wrap').classList.toggle('warn', cavitate);
 
   const banner = document.getElementById('cavBanner');
@@ -731,7 +769,7 @@ function loop() {
   const rect = wrap.getBoundingClientRect();
   const W = rect.width, H = rect.height;
 
-  const { d0, d2, v0, v2, P0, P2, dP, cavitate } = getVals();
+  const { d0, d2, v0, v2, P0, P2, P2_raw, dP, cavitate } = getVals();
   cavitating = cavitate;
 
   if (frame % 2 === 0 && particles.length < 60 + N * 8) spawnParticle(W, H, d0);
@@ -742,7 +780,7 @@ function loop() {
   drawParticles(H);
   drawBubbles();
   drawManometers(W, H);
-  updateMetrics(v2, P0, P2, dP, cavitate);
+  updateMetrics(v2, P0, P2, P2_raw, dP, cavitate);
 
   requestAnimationFrame(loop);
 }
