@@ -848,9 +848,20 @@ const PARAM_META = {
 function drawChart(xParam, canvas) {
   const wrap = canvas.parentElement;
   const rect = wrap.getBoundingClientRect();
-  const W = rect.width, H = rect.height;
+  const W = rect.width;
+  const H = rect.height;
   if (W <= 0 || H <= 0) return;
+  
+  const dpr = window.devicePixelRatio || 1;
+  
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
+  
   const chartCtx = canvas.getContext("2d");
+  chartCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  
   const c = chartCtx;
   c.clearRect(0, 0, W, H);
 
@@ -1022,7 +1033,7 @@ document.getElementById('dz').addEventListener('input', function () {
   document.getElementById('dzv').textContent = (+this.value).toFixed(1) + ' m';
   drawAllCharts();
 });
-window.addEventListener('resize', () => { resize(); particles = []; drawAllCharts(); });
+window.addEventListener('resize', () => { resize(); particles = []; requestAnimationFrame(drawAllCharts); });
 
 resize();
 loop();
